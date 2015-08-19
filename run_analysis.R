@@ -40,7 +40,8 @@ CheckFiles <- function() {
     filesOK
 }
 
-# This function does the actual reading, merging and selecting columns from the dataset
+# This function reads and  merges both data sets (train, test), adds subject and
+# activity info, and extracts the requested columns (mean value, standard deviation)
 MergeData <- function() {
     # Loading TRAIN data: measurements(X_train) + activity labels (y_train) + subject (subject_train)
     trainData<-read.table("./train/X_train.txt")
@@ -70,7 +71,7 @@ MergeData <- function() {
     fullData <- fullData[, filteredCols]
 }
 
-# This function produce "clean" column names, and corrects a typo (fBodyBody...)
+# This function produces "clean" column names, and corrects a typo (fBodyBody...)
 tidyNames <- function(dt) {
     newNames <- names(dt)
     newNames <- gsub("fBodyBody", "fBody", newNames)    # The typo
@@ -98,7 +99,7 @@ Reshape <- function(x, method = "melt") {
     
         # Now we can melt and dcast to reshape the data
         tidy <- dcast(melt(x, id=indx, measure.vars=vars), Subject + Activity ~ variable, mean)
-    } else if (method=="plyr") {
+    } else if (method=="ddply") {
         tidy <- ddply(x, indx, numcolwise(mean))
     } else { 
         tidy <- x   # do nothing
@@ -113,19 +114,19 @@ Reshape <- function(x, method = "melt") {
 #####################################################################################
 # Check the files
 if (!CheckFiles()) {
-    stop("Some files are missing. Maybe the working directory is not set to the \"UCI HAR Dataset\" folder.")
+    stop("Some files are missing or the working directory is not set to the \"UCI HAR Dataset\" folder.")
 }
 
-# Read, merge and select useful columns into myData
+# Read, merge and extract required columns into myData
 myData <- MergeData()
 
 # Add meaningfulness to names
 names(myData) <- tidyNames(myData)
 
 # Reshape data
-tidyData <- Reshape(myData, method="plyr")
+tidyData <- Reshape(myData, method="ddply")
 
 # Finally, we write the results. To read them back use standard read.csv o read.table
-write.csv(tidyData, "tidyData2.csv", row.names = FALSE)      # for Excel users like me
-write.table(tidyData, "tidyData2.txt", row.names = FALSE)
+write.csv(tidyData, "tidyData.csv", row.names = FALSE)      # for Excel users like me
+write.table(tidyData, "tidyData.txt", row.names = FALSE)
 
