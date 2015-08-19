@@ -31,9 +31,6 @@ CheckFiles <- function() {
     if (!file.exists("features.txt")) {
         print ("File features.txt doesn´t exists"); filesOK <- FALSE
     }
-    if (!file.exists("./train/X_train.txt")) {
-        print ("File train/X_train.txt doesn´t exists"); filesOK <- FALSE
-    }
     if (!file.exists("activity_labels.txt")) {
         print ("File activity_labels.txt doesn´t exists"); filesOK <- FALSE
     }
@@ -58,12 +55,12 @@ MergeData <- function() {
 
     # Reading "features.txt" to set the column names of the data set
     features = read.table("features.txt", colClasses = c("character"))
-    columnNames <- c(features$V2, "ActivityLabel", "Subject")
+    columnNames <- c(features$V2, "ActivityId", "Subject")
     colnames(fullData) <- columnNames
     
-    # Adding Activity column based on the Activity Label (human readable)
+    # Adding Activity column based on the Activity Id (human readable)
     actNames = read.table("activity_labels.txt")
-    fullData$Activity <- actNames[fullData$ActivityLabel,]$V2
+    fullData$Activity <- actNames[fullData$ActivityId,]$V2
     
     # Filter mean and std columns + activity and subject
     # It will not select angle(...)
@@ -72,8 +69,8 @@ MergeData <- function() {
 }
 
 # This function produces "clean" column names, and corrects a typo (fBodyBody...)
-tidyNames <- function(dt) {
-    newNames <- names(dt)
+tidyNames <- function(x) {
+    newNames <- names(x)
     newNames <- gsub("fBodyBody", "fBody", newNames)    # The typo
     newNames <- gsub("^f", "freq.", newNames)
     newNames <- gsub("^t", "time.", newNames)
@@ -113,20 +110,27 @@ Reshape <- function(x, method = "melt") {
 #
 #####################################################################################
 # Check the files
+print ("Checking required raw data files ... ")
 if (!CheckFiles()) {
     stop("Some files are missing or the working directory is not set to the \"UCI HAR Dataset\" folder.")
 }
 
 # Read, merge and extract required columns into myData
+print ("Reading raw data, merging and extracting required columns ... ")
 myData <- MergeData()
 
 # Add meaningfulness to names
+print ("Transforming column names ... ")
 names(myData) <- tidyNames(myData)
 
 # Reshape data
+print ("Summarizing data ... ")
 tidyData <- Reshape(myData, method="ddply")
 
 # Finally, we write the results. To read them back use standard read.csv o read.table
+print ("Writing results ... ")
 write.csv(tidyData, "tidyData.csv", row.names = FALSE)      # for Excel users like me
 write.table(tidyData, "tidyData.txt", row.names = FALSE)
+print ("And that´s it!!! ")
+
 
